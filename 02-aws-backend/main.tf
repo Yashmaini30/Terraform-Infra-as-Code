@@ -1,6 +1,6 @@
 terraform {
     backend "s3" {
-        bucket = "terraform-state"
+        bucket = "practice-devops-tf-state"
         key    = "02-aws-backend/terraform.tfstate"
         region = "us-east-1"
         dynamodb_table = "terraform-state-lock"
@@ -20,7 +20,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "terraform_state" {
-    bucket = "terraform-state"
+    bucket = "practice-devops-tf-state"
     force_destroy = true
 
     tags = {
@@ -45,8 +45,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_e
     } 
 }
 
-resource "aws_dynamodb_table" "terraform_state_lock" {
-    name = "terraform-state-lock"
+resource "aws_dynamodb_table" "terraform-state-locking" {
+    name = "terraform-state-locking"
     hash_key = "LockID"
     billing_mode = "PROVISIONED"
     table_class = "STANDARD"
