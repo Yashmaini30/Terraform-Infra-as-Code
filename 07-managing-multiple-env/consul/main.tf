@@ -18,6 +18,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
+## REPO: https://github.com/hashicorp/terraform-aws-consul
+
 module "consul" {
   source = "git@github.com:hashicorp/terraform-aws-consul.git"
 }
