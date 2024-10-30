@@ -1,16 +1,15 @@
 terraform {
-  # we already have  s3 and dynamodb
   backend "s3" {
-    bucket = "terraform-state"
-    key = "06-web-app/terraform.tfstate"
-    region = "us-east-1"
-    dynamodb_table = "terraform-state-lock"
-    encrypt = true
+    bucket         = "practice-devops-tf-state"
+    key            = "06-web-app/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-state-locking"
+    encrypt        = true
   }
 
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
       version = "~> 3.27"
     }
   }
@@ -20,6 +19,54 @@ provider "aws" {
   region = var.region
 }
 
+# Default VPC and Subnets
+data "aws_vpc" "default_vpc" {
+  default = true
+}
+
+data "aws_subnet_ids" "default_subnet" {
+  vpc_id = data.aws_vpc.default_vpc.id
+}
+
+# Security Groups
+resource "aws_security_group" "instances" {
+  name        = "instances-security-group"
+  description = "Security group for instance_1 and instance_2"
+  vpc_id      = data.aws_vpc.default_vpc.id
+}
+
+resource "aws_security_group" "alb" {
+  name = "alb-security-group"
+}
+
+resource "aws_security_group_rule" "allow_http_inbound" {
+  type              = "ingress"
+  security_group_id = aws_security_group.instances.id
+  from_port         = 8080
+  to_port           = 8080
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "allow_alb_http_inbound" {
+  type              = "ingress"
+  security_group_id = aws_security_group.alb.id
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "allow_alb_all_outbound" {
+  type              = "egress"
+  security_group_id = aws_security_group.alb.id
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+# Instances
 resource "aws_instance" "instance_1" {
   ami             = var.ami
   instance_type   = var.instance_type
@@ -42,46 +89,19 @@ resource "aws_instance" "instance_2" {
               EOF
 }
 
-resource "aws_s3_bucket" "bucket" {
-  bucket_prefix = var.bucket_prefix
-  force_destroy = true
+# Load Balancer and Target Groups
+resource "aws_lb" "load_balancer" {
+  name               = "web-app-lb"
+  load_balancer_type = "application"
+  subnets            = data.aws_subnet_ids.default_subnet.ids
+  security_groups    = [aws_security_group.alb.id]
 }
 
-resource "aws_s3_bucket_versioning" "bucket_versioning" {
-  bucket = aws_s3_bucket.bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_versioning" "bucket_versioning" {
-  bucket = aws_s3_bucket.bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-data "aws_vpc" "default_vpc" {
-  default = true
-}
-
-resource "aws_security_group_rule" "allow_http_inbound" {
-  type              = "ingress"
-  security_group_id = aws_security_group.instances.id
-
-  from_port   = 8080
-  to_port     = 8080
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
-}
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.load_balancer.arn
+  port              = 80
+  protocol          = "HTTP"
 
-  port = 80
-
-  protocol = "HTTP"
-
-  # By default, return a simple 404 page
   default_action {
     type = "fixed-response"
 
@@ -138,42 +158,20 @@ resource "aws_lb_listener_rule" "instances" {
   }
 }
 
-
-resource "aws_security_group" "alb" {
-  name = "alb-security-group"
+# S3 Bucket
+resource "aws_s3_bucket" "bucket" {
+  bucket_prefix = var.bucket_prefix
+  force_destroy = true
 }
 
-resource "aws_security_group_rule" "allow_alb_http_inbound" {
-  type              = "ingress"
-  security_group_id = aws_security_group.alb.id
-
-  from_port   = 80
-  to_port     = 80
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
-
+resource "aws_s3_bucket_versioning" "bucket_versioning" {
+  bucket = aws_s3_bucket.bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
-resource "aws_security_group_rule" "allow_alb_all_outbound" {
-  type              = "egress"
-  security_group_id = aws_security_group.alb.id
-
-  from_port   = 0
-  to_port     = 0
-  protocol    = "-1"
-  cidr_blocks = ["0.0.0.0/0"]
-
-}
-
-
-resource "aws_lb" "load_balancer" {
-  name               = "web-app-lb"
-  load_balancer_type = "application"
-  subnets            = data.aws_subnet_ids.default_subnet.ids
-  security_groups    = [aws_security_group.alb.id]
-
-}
-
+# Route 53
 resource "aws_route53_zone" "primary" {
   name = var.domain
 }
@@ -190,16 +188,28 @@ resource "aws_route53_record" "root" {
   }
 }
 
+# RDS Subnet Group and Instance
+resource "aws_db_subnet_group" "default" {
+  name       = "default-db-subnet-group"
+  subnet_ids = data.aws_subnet_ids.default_subnet.ids
+
+  tags = {
+    Name = "Default DB Subnet Group"
+  }
+}
+
 resource "aws_db_instance" "db_instance" {
-  allocated_storage    = 20
-  storage_type        = "standard"
-  engine              = "postgres"
-  engine_version      = "12"
-  instance_class      = "db.t3.micro"
-  username            = var.db_user
-  password            = var.db_pass             
-  skip_final_snapshot = true
-  publicly_accessible  = false                      
-  delete_automated_backups = false                 
-  backup_retention_period = 0                       
+  allocated_storage         = 20
+  storage_type              = "standard"
+  engine                    = "postgres"
+  engine_version            = "12"
+  instance_class            = "db.t3.micro"
+  username                  = var.db_user
+  password                  = var.db_pass
+  skip_final_snapshot       = true
+  publicly_accessible       = false
+  delete_automated_backups  = false
+  backup_retention_period   = 0
+  db_subnet_group_name      = aws_db_subnet_group.default.name 
+  vpc_security_group_ids    = [aws_security_group.instances.id] 
 }
