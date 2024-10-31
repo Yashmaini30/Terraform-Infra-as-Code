@@ -31,3 +31,17 @@ variable "instance_type" {
   type        = string
   default     = "t2.micro"
 }
+
+# RDS varaibles 
+
+variable "db_user" {   
+  description = "username for database" 
+  type        = string
+  default     = "foo"
+}
+
+variable "db_pass" {
+  description = "password for database"                 
+  type        = string
+  sensitive   = true
+}
