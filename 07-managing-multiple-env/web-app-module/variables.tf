@@ -59,3 +59,10 @@ variable "domain" {
   type = string
   default = "mainiyash.com"
 }
+
+# S3 variables
+
+variable "bucket_prefix" {
+  description = "prefix for s3 bucket"
+  type = string
+}
