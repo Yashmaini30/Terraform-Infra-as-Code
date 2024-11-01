@@ -10,7 +10,7 @@ data "aws_route53_zone" "primary" {
 
 locals {
   dns_zone_id  = var.create_dns_zone ? aws_route53_zone.primary[0].id : data.aws_route53_zone.primary[0].id
-  subdomain    = var.subdomain == "production" ? "": "${var.environment_name}."
+  subdomain    = var.environment_name == "production" ? "": "${var.environment_name}."
 }
 
 resource "aws_route53_record" "root" {
