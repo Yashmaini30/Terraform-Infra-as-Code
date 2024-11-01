@@ -32,6 +32,7 @@ module "web_app_1" {
   # Input Variables
   bucket_prefix    = "web-app-1-data"
   app_name         = "web-app-1"
+  domain           = "mainiyash.com"
   environment_name = "production"
   instance_type    = "t2.micro"
   create_dns_zone  = false
@@ -46,6 +47,7 @@ module "web_app_2" {
   # Input Variables
   bucket_prefix    = "web-app-2-data"
   app_name         = "web-app-2"
+  domain           = "mainiyash2.com"
   environment_name = "production"
   instance_type    = "t2.micro"
   create_dns_zone  = false

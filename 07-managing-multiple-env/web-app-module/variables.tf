@@ -46,6 +46,11 @@ variable "db_pass" {
   sensitive   = true
 }
 
+variable "db_name" {
+  description = "name for database"
+  type = string
+}
+
 # Route53 variables
 
 variable "create_dns_zone" {
