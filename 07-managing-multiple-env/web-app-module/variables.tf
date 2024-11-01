@@ -45,3 +45,17 @@ variable "db_pass" {
   type        = string
   sensitive   = true
 }
+
+# Route53 variables
+
+variable "create_dns_zone" {
+  description = "create dns zone"
+  type = bool
+  default = true
+}
+
+variable "domain" {
+  description = "domain name"
+  type = string
+  default = "mainiyash.com"
+}
