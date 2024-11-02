@@ -34,7 +34,7 @@ module "web_app" {
 
   # Input Variables
   bucket_prefix    = "web-app-data-${local.environment_name}"
-  domain           = "devopsdeployed.com"
+  domain           = "staging.mainiyash.com"
   environment_name = local.environment_name
   instance_type    = "t2.micro"
   create_dns_zone  = false
