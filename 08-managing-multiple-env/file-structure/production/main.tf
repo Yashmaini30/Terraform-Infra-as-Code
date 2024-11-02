@@ -3,7 +3,7 @@ terraform {
     bucket = "practice-devops-tf-state"
     key    = "08-managing-multiple-env/production/terraform.tfstate"
     region = "us-east-1"
-    dynamodb_table = "terraform-state-lock"
+    dynamodb_table = "terraform-state-locking"
     encrypt = true
   }
 
