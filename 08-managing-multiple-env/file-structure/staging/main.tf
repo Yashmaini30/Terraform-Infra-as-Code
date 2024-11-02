@@ -3,7 +3,7 @@ terraform {
     bucket = "practice-devops-tf-state"
     key    = "08-managing-multiple-env/staging/terraform.tfstate"
     region = "us-east-1"
-    dynamodb_table = "terraform-state-lock"
+    dynamodb_table = "terraform-state-locking"
     encrypt = true
   }
 
@@ -34,7 +34,7 @@ module "web_app" {
 
   # Input Variables
   bucket_prefix    = "web-app-data-${local.environment_name}"
-  domain           = "staging.mainiyash.com"
+  domain           = "mainiyash.com"
   environment_name = local.environment_name
   instance_type    = "t2.micro"
   create_dns_zone  = false
