@@ -35,7 +35,7 @@ module "web_app_1" {
   domain           = "mainiyash.com"
   environment_name = "production"
   instance_type    = "t2.micro"
-  create_dns_zone  = false
+  create_dns_zone  = true
   db_name          = "webapp1db"
   db_user          = "foo"
   db_pass          = var.db_pass_1
@@ -50,7 +50,7 @@ module "web_app_2" {
   domain           = "mainiyash2.com"
   environment_name = "production"
   instance_type    = "t2.micro"
-  create_dns_zone  = false
+  create_dns_zone  = true
   db_name          = "webapp2db"
   db_user          = "bar"
   db_pass          = var.db_pass_2
